@@ -2,7 +2,7 @@
 
 !SLIDE
 
-# 5 minutes intro to Elasticsearch
+# 10+10 minutes intro to Elasticsearch
 
 }}} images/tree.jpg
 
@@ -11,7 +11,7 @@
 # Elasticsearch <span style="color:gray">is a</span>
 
 * multitenant,
-* real-time,
+* (near to) real-time,
 * distributed
 
 index engine based on **Lucene**, that
@@ -27,14 +27,42 @@ index engine based on **Lucene**, that
 * <span style="color:gray">was started</span> by the author of Compass, Shay Banon
 * <span style="color:gray">is written</span> in Java
 * <span style="color:gray">is actively developed</span> @[github.com/elasticsearch/elasticsearch](https://github.com/elasticsearch/elasticsearch)
-    * 0.5 (2 years ago)
-    * 0.18 (8 month ago)
-    * 0.19 (4 month ago)
-    * 0.19.4 (1 month ago)
-    * 0.19.5 (12h ago)
+    * 0.5 
+    * 0.18 
+    * 0.19 
+    * 0.19.4 
+    * 0.19.5 
+    * 0.19.8 (July 2, 2012)
 
 !SLIDE left
+# Anatomy of elastic search
 
+}}} images/LondonEye.jpg
+
+!SLIDE left
+# Anatomy 1/3
+
+* ElasticSearch runs as a service on your webserver.
+* If you are running a single server you are running a single ElasticSearch **cluster**. 
+* A single cluster can house the search for more than one site, each of which is stored in an **index**. 
+* Within an index are **types**. These map nicely onto Symphony sections, e.g. articles, products or comments. 
+* ElasticSearch stores **documents** (Symphony entries) which are made up of **fields**.
+
+!SLIDE left
+# Anatomy 2/3
+
+* Fields within a document can be strings, numbers, dates, arrays/collections, or several others. 
+* Although ElasticSearch will automatically create a new type when you throw a new type of document at it. * The structure of a type is known as a **mapping**, and is formatted in a JSON file.
+
+!SLIDE left
+# Anatomy 3/3
+
+* A **query type** is how to query ElasticSearch e.g. text, boolean, wildcard, fuzzy. 
+	* two main types: **query_string** and **match_all**.
+* **Analysers** are the logic that is run against both the content you are indexing (an entry) and what you are searching for (a keyword). 
+* An analyser comprises a **tokeniser**, which specifies how the tokens (usually words) are broken up (usually based on spaces between words), and **filters**, which work their magic on each word (such as removing stop words, reducing a word to its stem, or replacing with a synonym).
+
+!SLIDE left
 # Multitenancy
 
 * have as many indexes as you want
@@ -52,14 +80,13 @@ $ curl -XDELETE localhost:9200/throwaway    # destroy index
 ``` sh
 $ curl -XGET    localhost:9200/idx1,idx2/_search?q=Leipzig # search for Leipzig in idx1 and idx2
 ```
-!SLIDE left
 
+!SLIDE left
 # Real-time / `refresh_interval` at 1s by default
 
 }}} images/rt.jpg
 
 !SLIDE left
-
 # Distributed
 
 * start with one node, add more on the go
@@ -70,15 +97,14 @@ $ curl -XPUT localhost:9200/sample_index/_settings -d '{ "index" : { "number_of_
 ```
 
 * automatic load balancing (index, search)
+* replicas are near real-time too (Push replication)
 
 !SLIDE left
-
 # Adapts to your domain
 
 }}} images/domain.png
 
 !SLIDE left
-
 # Adapts to your domain
 
 * JSON documents
@@ -140,23 +166,6 @@ $ curl -XGET 'http://localhost:9200/twitter/tweet/_search?q=user:kimchy'
 
 !SLIDE left
 
-# Tradeoffs
-
-* no autowarming (see: [https://github.com/elasticsearch/elasticsearch/issues/1006](https://github.com/elasticsearch/elasticsearch/issues/1006))
-* while active, the community is much smaller than SOLR's
-* versioned documents would be nice, but it's not built-in (as we discovered)
-
-!SLIDE left
-
-# ES in a library context
-
-* Linking Open Bibliographic Data [http://lobid.org](http://lobid.org)
-    * see also: [http://www.dipf.de/de/bildungsinformation/pdf/pohl-linked-open-data-services-im-hbz-fis-tagung-2012](http://www.dipf.de/de/bildungsinformation/pdf/pohl-linked-open-data-services-im-hbz-fis-tagung-2012)
-* finc
-    * raw data storage
-
-!SLIDE left
-
 # What others say
 
 * Solr may be the weapon of choice when building standard search applications, but Elasticsearch takes it to the next level with an architecture for creating modern realtime search applications. 
@@ -192,6 +201,103 @@ $ curl -XGET 'http://localhost:9200/twitter/tweet/_search?q=user:kimchy'
 * language bindings:
     * Elasticsearch.pm, PHP, Ruby, Python, Java (native), .NET, Clojure, Erlang
 
+!SLIDE left
+
+# PHP binding:
+
+* [https://github.com/ruflin/Elastica/wiki/Links](https://github.com/ruflin/Elastica/wiki/Links)
+
+# Symfony bundle:
+
+* [http://symphonyextensions.com/extensions/elasticsearch](http://symphonyextensions.com/extensions/elasticsearch)
+
+# A must plugin:
+* [http://localhost:9200/_plugin/head](http://localhost:9200/_plugin/head)
+
+!SLIDE left
+
+# Demo?
+
+}}} images/shutterstock_86440180.jpg
+!SLIDE left
+}}} images/palazzotoschi.jpg
+
+# Attachment Type in Action [https://gist.github.com/1075067](https://gist.github.com/1075067)
+!SLIDE left
+
+
+* Download some data
+
+``` sh
+curl -C - -O http://www.intersil.com/data/fn/fn6742.pdf
+```
+
+* Attachments plugin can parse and index documents in many formats. Check Tika web page for list of supported formats.
+!SLIDE left
+
+
+* Setup mapping (aka prepare new index for the data)
+
+``` sh
+curl -X DELETE "localhost:9200/test"
+
+curl -X PUT "localhost:9200/test" -d '{
+  "settings" : { "index" : { "number_of_shards" : 1, "number_of_replicas" : 0 }}
+}'
+```
+
+
+Before we can use the attachments plugin we need to create correct mapping for the attachment type.
+
+``` sh
+curl -X PUT "localhost:9200/test/attachment/_mapping" -d '{
+  "attachment" : {
+    "properties" : {
+      "file" : {
+        "type" : "attachment",
+        "fields" : {
+          "title" : { "store" : "yes" },
+          "file" : { "term_vector":"with_positions_offsets", "store":"yes" }
+        }
+      }
+    }
+  }
+}'
+```
+!SLIDE left
+
+Indexing the Data
+We are ready to index the data. We just need to encode the content of the file with Base64 for which we will use a simpe Perl script.
+
+``` sh
+#!/bin/sh
+
+coded=`cat fn6742.pdf | perl -MMIME::Base64 -ne 'print encode_base64($_)'`
+json="{\"file\":\"${coded}\"}"
+echo "$json" > json.file
+curl -X POST "localhost:9200/test/attachment/" -d @json.file
+```
+
+!SLIDE left
+
+Search for Highlighted results
+* We are done indexing the data and we are now free to search it. To make it even more cool we want the document title and some highlighted results back (note how we setup mapping for the title and file content).
+
+``` sh
+curl "localhost:9200/_search?pretty=true" -d '{
+  "fields" : ["title"],
+  "query" : {
+    "query_string" : {
+      "query" : "amplifier"
+    }
+  },
+  "highlight" : {
+    "fields" : {
+      "file" : {}
+    }
+  }
+}'
+```
 
 !SLIDE left
 

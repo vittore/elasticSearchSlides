@@ -106,12 +106,18 @@ body {
       box-pack: start; }
       .keydown.deck-container .slide.full-background.tree {
         background-image: url(../images/tree.jpg); }
+      .keydown.deck-container .slide.full-background.LondonEye {
+        background-image: url(../images/LondonEye.jpg); }
       .keydown.deck-container .slide.full-background.rt {
         background-image: url(../images/rt.jpg); }
       .keydown.deck-container .slide.full-background.domain {
         background-image: url(../images/domain.png); }
       .keydown.deck-container .slide.full-background.percolation {
         background-image: url(../images/percolation.jpg); }
+      .keydown.deck-container .slide.full-background.shutterstock_86440180 {
+        background-image: url(../images/shutterstock_86440180.jpg); }
+      .keydown.deck-container .slide.full-background.palazzotoschi {
+        background-image: url(../images/palazzotoschi.jpg); }
       .keydown.deck-container .slide.full-background h1 {
         display: inline;
         position: absolute;
